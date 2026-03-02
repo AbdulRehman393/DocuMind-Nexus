@@ -1,216 +1,243 @@
-# DocuMind AI
+# DocuMind Nexus
 
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
-[![Repo](https://img.shields.io/badge/repo-DocuMind--AI-purple)](https://github.com/AbdulRehman393/DocuMind-AI)
+**DocuMind Nexus** is a docs‑first **RAG (Retrieval‑Augmented Generation)** assistant that lets you upload **PDF, DOCX, and HTML** files, index them into a **Chroma vector database**, and chat with an LLM to get grounded answers. It also includes an optional **live web search fallback** using **SerpAPI** for “today/current/latest” questions.
 
-🧠 DocuMind AI — An intelligent document assistant for querying PDFs, DOCX and HTML files using a Retrieval-Augmented Generation (RAG) pipeline. Upload documents, index them to Chroma, and ask natural-language questions — answers are returned with document context.
+> Built with **FastAPI + Streamlit + LangChain + Chroma**.
 
 ---
 
-## Key features
-- Upload & index documents: PDF, DOCX, HTML
-- RAG chat powered by LangChain + Chroma
-- Offline-friendly demo embeddings (SimpleHashEmbeddings) — run without external embedding services
-- Live web search tool via SerpAPI (SerpAPIWrapper) integrated into the agent for current events / web lookups
-- Modern Streamlit UI with model selector and session management
-- FastAPI backend with endpoints for uploading, listing, deleting documents and chat
-- Local SQLite DB for lightweight metadata and chat logs
+## Highlights
+
+- **Upload & Index**: PDF / DOCX / HTML
+- **Docs‑first RAG**: searches your indexed documents before anything else
+- **Chroma Vector Store**: persisted locally in `./chroma_db`
+- **Session Memory**: chat history stored in SQLite (`rag_app.db`)
+- **Live Web Search Fallback**: SerpAPI used for current info (weather/news/date)
+- **Offline Embeddings Demo Mode**: `SimpleHashEmbeddings` (no downloads, no API calls)
 
 ---
 
-## Live demo / Screenshots
-![DocuMind AI Screenshot](images/image_1.png)
-![DocuMind AI Screenshot](images/image_2.png)
+## Demo
+
+
+
+
+![UI](images/image_1.png)
+
+![UI](images/image_2.png)
+
 
 ---
 
-## What I checked & updated the README for
-I reviewed these important files to ensure the README reflects the code:
-- backend/main.py — API endpoints for chat, upload, list, delete
-- backend/langchain_utils.py — retriever, tools (document_search, web_search using SerpAPIWrapper), and RAG chain building
-- backend/chroma_utils.py — loaders, text splitter, SimpleHashEmbeddings, Chroma vectorstore initialization
-- backend/db_utils.py — SQLite helpers for documents and chat logs
-- frontend/streamlit_app.py — Streamlit UI, session state, chat rendering
-- frontend/sidebar.py & frontend/api_utils.py — upload UI, model selector, document management, API client
-- README.md (this file) — refreshed to match repository behavior
+## Architecture
+
+**Frontend (Streamlit)**
+- `streamlit_app.py` — UI + chat view + session handling
+- `sidebar.py` — upload/index UI, document list, model selector
+- `api_utils.py` — HTTP client to backend
+
+**Backend (FastAPI)**
+- `main.py` — API endpoints (`/chat`, `/upload-doc`, `/list-docs`, `/delete-doc`)
+- `langchain_utils.py` — docs-first chain + web fallback (SerpAPI)
+- `chroma_utils.py` — loaders, chunking, indexing, Chroma persistence
+- `db_utils.py` — SQLite logs + document store
+
+**Storage**
+- `rag_app.db` — SQLite database for chat logs & document records
+- `./chroma_db` — Chroma persistence directory
 
 ---
 
-## Quick Start (local)
+## Repo Structure
 
-1. Clone
-```bash
-git clone https://github.com/AbdulRehman393/DocuMind-AI.git
-cd DocuMind-AI
+```text
+.
+├── api_utils.py
+├── chat_interface.py
+├── chroma_utils.py
+├── db_utils.py
+├── langchain_utils.py
+├── main.py
+├── pydantic_models.py
+├── requirements.txt
+├── sidebar.py
+└── streamlit_app.py
 ```
 
-2. Create & activate a virtual environment
-```bash
-python -m venv venv
-# macOS / Linux
-source venv/bin/activate
-# Windows (PowerShell)
-venv\Scripts\Activate.ps1
-```
+---
 
-3. Install dependencies
+## Requirements
+
+- Python **3.10+** recommended
+- Works on Windows/macOS/Linux
+
+Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Copy `.env.example` to `.env` and configure keys (see Environment Variables below)
-```bash
-cp .env.example .env
-```
-
-5. Start the backend
-```bash
-cd backend
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-6. Start the frontend (separate terminal)
-```bash
-cd frontend
-streamlit run streamlit_app.py
-# If your entry is app.py use: streamlit run app.py
-```
-
-7. Open:
-- Streamlit UI: http://localhost:8501
-- FastAPI docs: http://localhost:8000/docs
-
 ---
 
-## Environment variables (.env)
-The project reads config from `.env` (see `.env.example`). Important keys to configure:
+## Environment Variables
 
-- BACKEND_PORT (optional) — port for FastAPI (default 8000)
-- CHROMA_DB_DIR (optional) — folder to persist Chroma DB
-- OPENROUTER_API_KEY / OPENAI_API_KEY (optional) — if you want to use hosted LLM providers
-- SERPAPI_API_KEY — (recommended) SerpAPI API key for the web_search tool (used by LangChain's SerpAPIWrapper)
-- OFFLINE_EMBEDDINGS (optional) — set to `true` to emphasize offline SimpleHashEmbeddings usage (the code already defaults to SimpleHashEmbeddings for demo)
+Your code loads `.env` from **one directory above** the backend files:
 
-Example entries in `.env`:
+```py
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 ```
-BACKEND_PORT=8000
-CHROMA_DB_DIR=./chroma_db
+
+So place `.env` in the parent folder (one level above your backend code folder), or adjust the path.
+
+### Required
+- `OPENROUTER_API_KEY` — used by LangChain `ChatOpenAI` via OpenRouter
+
+### Optional (for web search)
+- `SERPAPI_API_KEY` — used by `SerpAPIWrapper`
+
+Example `.env`:
+
+```env
 OPENROUTER_API_KEY=your_openrouter_key_here
-OPENAI_API_KEY=your_openai_key_here
 SERPAPI_API_KEY=your_serpapi_key_here
 ```
 
-Note: For offline demos, you can leave LLM provider keys empty and rely on the local/simple setup in the code.
+---
+
+## Run Locally
+
+### 1) Start the backend (FastAPI)
+
+```bash
+python main.py
+```
+
+Backend runs on:
+
+- `http://127.0.0.1:8000`
+
+### 2) Start the frontend (Streamlit)
+
+```bash
+streamlit run streamlit_app.py
+```
+
+Frontend runs on:
+
+- `http://localhost:8501`
 
 ---
 
-## Tech stack
-- Python 3.8+
-- FastAPI — backend APIs
-- Streamlit — frontend UI
-- LangChain — chains, tools, agent orchestration
-- Chroma — vector store / retriever
-- SerpAPI (via LangChain SerpAPIWrapper) — live web search tool
-- SQLite — local metadata & chat logs
-- SimpleHashEmbeddings — lightweight, offline embeddings for demos
+## How It Works (RAG Flow)
+
+1. Upload a document in the sidebar → `/upload-doc`
+2. Backend:
+   - Loads document (PDF/DOCX/HTML)
+   - Splits into chunks using `RecursiveCharacterTextSplitter`
+   - Embeds chunks using **SimpleHashEmbeddings** (offline demo)
+   - Stores vectors in **Chroma**
+3. When you ask a question:
+   - `document_search()` retrieves top chunks (`k=2`)
+   - LLM is prompted to answer strictly from retrieved extract
+   - If not found and question looks “live/current”, SerpAPI web search is used
+   - Otherwise it falls back to a general LLM response
 
 ---
 
-## How it works (high-level)
-1. Upload a document from the Streamlit sidebar.
-2. Backend loads and parses the file (PDF/DOCX/HTML), splits into chunks and creates embeddings (SimpleHashEmbeddings by default).
-3. Vectors are stored in Chroma and a retriever is created.
-4. LangChain RAG chain or agent uses the retriever and optionally the web_search tool (SerpAPIWrapper) to collect context, then forwards the context + question to the chosen model for generation.
-5. Responses are logged in SQLite and shown in the Streamlit chat UI.
+## API Endpoints
+
+### `POST /chat`
+Ask a question.
+
+Request:
+```json
+{
+  "question": "What is this document about?",
+  "model": "nvidia/nemotron-nano-9b-v2:free",
+  "session_id": "optional-session-id"
+}
+```
+
+Response:
+```json
+{
+  "answer": "...",
+  "session_id": "...",
+  "model": "nvidia/nemotron-nano-9b-v2:free",
+  "source": "document | web | llm | greeting"
+}
+```
+
+> Note: Your backend currently returns `source` (see `pydantic_models.py`). If you remove that field, update the response schema here.
+
+### `POST /upload-doc`
+Upload and index a file (`multipart/form-data`).
+
+### `GET /list-docs`
+List indexed documents.
+
+### `POST /delete-doc`
+Delete a document by `file_id`.
 
 ---
 
-## API endpoints summary & usage
+## Notes & Troubleshooting
 
-- POST /upload-doc
-  - Upload and index a document
-  - Example (curl, multipart):
-    ```bash
-    curl -X POST "http://localhost:8000/upload-doc" \
-      -F "file=@/path/to/file.pdf"
-    ```
+### 1) OpenRouter “429 Rate limit exceeded”
+If you are using free models, you can hit daily request limits. In that case the backend logs will show something like:
 
-- GET /list-docs
-  - Returns a list of indexed documents (id, filename, created_at, ...)
+- `Error code: 429 - Rate limit exceeded: free-models-per-day`
 
-- POST /delete-doc
-  - Delete document by id (removes from Chroma and SQLite)
-  - Example:
-    ```bash
-    curl -X POST "http://localhost:8000/delete-doc" \
-      -H "Content-Type: application/json" \
-      -d '{"file_id": 1}'
-    ```
+Fixes:
+- Add credits to OpenRouter
+- Switch models / use a paid tier
+- Reduce calls (increase chunk quality, cache, etc.)
 
-- POST /chat
-  - Send a question and (optionally) session_id and model selection
-  - Example:
-    ```bash
-    curl -X POST "http://localhost:8000/chat" \
-      -H "Content-Type: application/json" \
-      -d '{"question":"What is the summary of the document?", "model": "nvidia/nemotron-nano-9b-v2:free"}'
-    ```
+### 2) SerpAPI not working
+If web search returns errors:
+- confirm `SERPAPI_API_KEY` exists in `.env`
+- verify your SerpAPI plan allows requests
 
-For interactive exploration, use FastAPI docs at http://localhost:8000/docs
+### 3) “Backend offline” in the sidebar
+- Ensure FastAPI is running (`python main.py`)
+- Ensure `API_URL` in `api_utils.py` matches backend host/port (`127.0.0.1:8000`)
 
 ---
 
-## SerpAPI + web_search tool
-The project includes a web_search tool implemented in backend/langchain_utils.py using LangChain's SerpAPIWrapper. When SerpAPI credentials are set in `.env` (SERPAPI_API_KEY), the agent can perform live web lookups to augment responses for current events or external info.
+## Why `SimpleHashEmbeddings`?
 
-- Set `SERPAPI_API_KEY` in `.env` to enable live search.
-- The web_search tool is invoked by the LangChain agent when it needs web information.
+This project intentionally includes an **offline embeddings** option to avoid:
+- network/SSL issues
+- model downloads
+- API costs
 
----
-
-## Notes about embeddings & local demo
-The repository uses `SimpleHashEmbeddings` (in backend/chroma_utils.py) as a 100% offline-friendly embedding implementation. This is ideal for demos and running without external API calls. For production, you can swap this for a standard embeddings class (OpenAIEmbeddings, HuggingFace, etc.) and update the vectorstore initialization accordingly.
+It’s great for demos and learning. For best retrieval quality, swap it with a real embeddings model later.
 
 ---
 
-## Troubleshooting & tips
-- Backend unreachable: ensure `uvicorn main:app` is running and `API_URL` in `frontend/api_utils.py` points to the correct backend host/port.
-- File not accepted: allowed types are `.pdf`, `.docx`, `.html` (see backend validation).
-- SerpAPI web_search returns empty/403: verify `SERPAPI_API_KEY` in `.env` and confirm your SerpAPI plan has queries left.
-- Performance: adjust text splitter chunk_size & chunk_overlap in `chroma_utils.py` to tune index size vs retrieval relevance.
-- Persistence: set `CHROMA_DB_DIR` to persist Chroma database between runs.
+## Roadmap (Ideas)
+
+- Add **citations** (show chunk sources + file names)
+- Add **streaming** responses in Streamlit
+- Add **per-document filters** in retrieval
+- Add **Docker** support
+- Replace hash embeddings with **SentenceTransformers** or OpenAI embeddings
 
 ---
 
-## Development & tests
-- Code organization:
-  - `backend/` — API, langchain & chroma helpers, db utilities
-  - `frontend/` — Streamlit UI and helpers
-- Suggested next steps:
-  - Add unit tests for document parsing & db logic
-  - Add format/linting via pre-commit and GitHub Actions
-  - Provide a Dockerfile / docker-compose for simplified deployment
+## Contact
 
----
-
-## Contribution
-Contributions are welcome. Typical workflow:
-1. Fork the repo
-2. Create a branch: `git checkout -b feature/your-feature`
-3. Commit & push
-4. Open a PR describing the feature/fix
-
-Please include tests where applicable.
+- Email: **khawajaabdulrehman393@gmail.com**
+- GitHub: **AbdulRehman3939** (https://github.com/AbdulRehman3939)
 
 ---
 
 ## License
-This project is licensed under the MIT License — see [LICENSE](./LICENSE).
+
+Choose a license (MIT is common). Add a `LICENSE` file when you’re ready.
 
 ---
 
 ## Author
-Built with ❤️ by [AbdulRehman393](https://github.com/AbdulRehman393)  
-For support, open an issue in this repo.
 
+Built by **Abdul Rehman**
